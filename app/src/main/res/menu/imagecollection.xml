@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/action_export"
+        android:icon="@mipmap/ic_trending_up_black_24dp"
+        android:title="@string/action_export"
+        app:showAsAction="ifRoom"
+        />
+</menu>

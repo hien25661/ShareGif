@@ -1,0 +1,25 @@
+<resources>
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="actionBarStyle">@style/Widget.AppTheme.ActionBar</item>
+        <item name="actionBarTheme">@style/ThemeOverlay.AppTheme.ActionBar</item>
+        <item name="android:titleTextStyle">@style/TextAppearance.AppTheme.Widget.ActionBar.Title</item>
+    </style>
+
+    <style name="Widget.AppTheme.ActionBar" parent="Widget.AppCompat.ActionBar.Solid">
+        <item name="background">@android:color/white</item>
+    </style>
+
+    <style name="ThemeOverlay.AppTheme.ActionBar" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:textColorPrimary">@android:color/black</item>
+
+        <!-- TODO Understand this -->
+        <item name="android:textColorSecondary">?android:textColorPrimary</item>
+        <item name="actionMenuTextColor">?android:textColorPrimary</item>
+        <item name="colorControlNormal">?android:textColorPrimary</item>
+    </style>
+
+    <style name="TextAppearance.AppTheme.Widget.ActionBar.Title" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+
+    </style>
+</resources>

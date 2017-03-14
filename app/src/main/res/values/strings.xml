@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">ShareStickers-Android</string>
+    <string name="action_export">Export</string>
+    <string name="action_share">Share</string>
+
+    <string name="label_gif">GIF</string>
+    <string name="label_collection">Image Collection</string>
+    <string name="label_preview">Preview</string>
+</resources>
