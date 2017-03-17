@@ -6,7 +6,7 @@
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="com.gnt.sharestickers_android.SharestickersPreviewActivity">
+        tools:context="com.gnt.sharestickers_android.ShareStickersPreviewActivity">
 
         <android.support.constraint.ConstraintLayout
             android:layout_width="0dp"

@@ -1,5 +1,6 @@
 package com.gnt.sharestickers_android;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -8,6 +9,7 @@ import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -21,6 +23,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Toast;
 
 import com.gnt.sharestickers_android.databinding.ActivityPictureCollectionBinding;
 import com.gnt.sharestickers_android.util.Constant;
@@ -34,6 +37,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnPermissionDenied;
+import permissions.dispatcher.RuntimePermissions;
+
+@RuntimePermissions
 public class PictureCollectionActivity extends AppCompatActivity {
     private final String DEBUG_TAG = getClass().getName();
 
@@ -42,9 +50,9 @@ public class PictureCollectionActivity extends AppCompatActivity {
     public static final int REQUEST_IMAGE_GALLERY = 1;
     public static final int REQUEST_IMAGE_CAMERA = 2;
 
+    private ActivityPictureCollectionBinding binding;
     private Context mContext;
     private String captureImagePath = "";
-    ActivityPictureCollectionBinding binding;
 
     private ArrayList<Bitmap> mBitmaps;
     private int exportGifWidth, exportGifHeight;
@@ -57,11 +65,9 @@ public class PictureCollectionActivity extends AppCompatActivity {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_picture_collection);
 
         setTitle(R.string.label_gif);
-
         mContext = this;
 
         setupActionBar();
-
         setupGridView();
     }
 
@@ -74,7 +80,6 @@ public class PictureCollectionActivity extends AppCompatActivity {
         } else {
             actionBar.setHomeAsUpIndicator(getResources().getDrawable(R.mipmap.ic_add_black_24dp));
         }
-
     }
 
     private void setupGridView() {
@@ -130,84 +135,25 @@ public class PictureCollectionActivity extends AppCompatActivity {
 
         AlertDialog pickFromDialog = alertBuilder.create();
         pickFromDialog.show();
-
-//        //TODO Determine what kind of media to preview
-//        String mime, url;
-//
-//        int num = (int) ((Math.random()*100) % 2);
-//        if (num == 0) {
-//            mime = MediaType.MIME_IMAGE_GIF;
-//            url = Constant.URL_GIF;
-//        } else {
-//            mime = MediaType.MIME_VIDEO_MP4;
-//            url = Constant.URL_MP4;
-//        }
-
-
     }
 
-
-    private void exportGif() {
+    @NeedsPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    public void exportGif() {
         try {
             // Get path for gif export file
             exportGiftPath = saveExportGif();
 
+            exportGifWidth = mGridImageAdapter.getConstrainWidth();
+            exportGifHeight = mGridImageAdapter.getConstrainHeight();
+
             mBitmaps = mGridImageAdapter.getBitmaps();
-
-            // Get width = size[0] and height = size[1]
-            int[] size = getAndCheckSize(mBitmaps);
-            exportGifWidth = size[0];
-            exportGifHeight = size[1];
-
-            if (exportGifWidth == -1) { // Empty pictures
+            if (mBitmaps.size() < 1) { // Empty pictures
                 showErrorDialog("Error", "Picture collection is empty.\nPlease try again!");
 
-            } else if (exportGifWidth == -2){ // Pictures's size are not identical
-                showErrorDialog("Error", "Size of pictures are not identical. Please try again!");
-
             } else { // Legal case
-                // Start encode gif file
-                final ProgressDialog progressDialog = new ProgressDialog(mContext);
-                progressDialog.setTitle("Building GIF file . . .");
-                progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-                progressDialog.setProgress(0);
-                progressDialog.setMax(mBitmaps.size());
-                progressDialog.show();
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        try {
-                            GifEncoder gifEncoder = new GifEncoder();
-                            gifEncoder.init(exportGifWidth, exportGifHeight, exportGiftPath);
-
-                            for (int i = 0; i < mBitmaps.size(); i++) {
-                                Bitmap bitmap = mBitmaps.get(i);
-                                gifEncoder.encodeFrame(bitmap, 200);
-                                progressDialog.setProgress(i+1);
-                            }
-
-                            // End encode gif file
-                            gifEncoder.close();
-
-                            progressDialog.dismiss();
-
-                            String mime = MediaType.MIME_IMAGE_GIF;
-                            String url = exportGiftPath;
-
-                            Intent previewIntent = new Intent(mContext, SharestickersPreviewActivity.class);
-                            previewIntent.putExtra(EXTRA_MIME_TYPE, mime);
-                            previewIntent.putExtra(EXTRA_URL, url);
-
-                            startActivity(previewIntent);
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
-
-            }
+                ExportGifAsyncTask exportGifAsyncTask = new ExportGifAsyncTask();
+                exportGifAsyncTask.execute();
+            } // End check mBitmaps size
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -218,38 +164,9 @@ public class PictureCollectionActivity extends AppCompatActivity {
 
     }
 
-    private int[] getAndCheckSize(ArrayList<Bitmap> bitmaps) {
-        int[] size = {0, 0};
-
-        int width, height;
-        if (bitmaps.size() > 0) {
-            // Get width & height for setting gif exporting file
-            Bitmap infoBitmap = bitmaps.get(0);
-            width = infoBitmap.getWidth();
-            height = infoBitmap.getHeight();
-
-            boolean isDifferenceSize = false;
-            for (int i = 1; i < bitmaps.size(); i++) {
-                Bitmap bitmap = bitmaps.get(i);
-                if (bitmap.getWidth() == width && bitmap.getHeight() == height) {
-                    if (BuildConfig.DEBUG) Log.d(DEBUG_TAG, "[getAndCheckSize] - Bitmap at " + i + " order is identical");
-                } else {
-                    isDifferenceSize = true;
-                }
-            }
-
-            if (!isDifferenceSize) {
-                size[0] = width;
-                size[1] = height;
-            } else {
-                size[0] = -2;
-                if (BuildConfig.DEBUG) Log.d(DEBUG_TAG, "[getAndCheckSize] - Bitmaps's size are not identical");
-            }
-        } else {
-            size[0] = -1;
-        }
-
-        return size;
+    @OnPermissionDenied(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    public void onPermissionWriteDenied() {
+        Toast.makeText(this, "Permission denied", Toast.LENGTH_LONG).show();
     }
 
     private void showErrorDialog(String title, String msg) {
@@ -265,7 +182,7 @@ public class PictureCollectionActivity extends AppCompatActivity {
         String mime = MediaType.MIME_VIDEO_MP4;
         String url = Constant.EXPORT_MP4;
 
-        Intent previewIntent = new Intent(this, SharestickersPreviewActivity.class);
+        Intent previewIntent = new Intent(this, ShareStickersPreviewActivity.class);
         previewIntent.putExtra(EXTRA_MIME_TYPE, mime);
         previewIntent.putExtra(EXTRA_URL, url);
 
@@ -332,7 +249,6 @@ public class PictureCollectionActivity extends AppCompatActivity {
             cameraIntent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
             cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
         } else {
-            //TODO
             if (BuildConfig.DEBUG) {
                 Log.d(DEBUG_TAG, "[onAddMenuItemClick] - saveCapturePicture return NULL");
             }
@@ -400,7 +316,7 @@ public class PictureCollectionActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
     }
 
-    class GridPictureItemClickListener implements AdapterView.OnItemClickListener {
+    private class GridPictureItemClickListener implements AdapterView.OnItemClickListener {
         int mPosition;
 
         @Override
@@ -422,4 +338,65 @@ public class PictureCollectionActivity extends AppCompatActivity {
 
         }
     }
+
+    private class ExportGifAsyncTask extends AsyncTask<Void, Void, Void> {
+
+        private ProgressDialog progressDialog;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            // Init progressDialog
+            progressDialog = new ProgressDialog(mContext);
+            progressDialog.setTitle("Building GIF file . . .");
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            progressDialog.setProgress(0);
+            progressDialog.setMax(mBitmaps.size());
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                GifEncoder gifEncoder = new GifEncoder();
+                gifEncoder.init(exportGifWidth, exportGifHeight, exportGiftPath);
+
+                // Start encode gif file
+                for (int i = 0; i < mBitmaps.size(); i++) {
+                    Bitmap bitmap = mBitmaps.get(i);
+                    gifEncoder.encodeFrame(bitmap, 200);
+                    progressDialog.setProgress(i+1);
+                }
+
+                // End encode gif file
+                gifEncoder.close();
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+            progressDialog.dismiss();
+
+            // Prepare data to preview
+            String mime = MediaType.MIME_IMAGE_GIF;
+            String url = exportGiftPath;
+
+            // Preview intent
+            Intent previewIntent = new Intent(mContext, ShareStickersPreviewActivity.class);
+            previewIntent.putExtra(EXTRA_MIME_TYPE, mime);
+            previewIntent.putExtra(EXTRA_URL, url);
+
+            startActivity(previewIntent);
+        }
+    }
+
 }

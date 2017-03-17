@@ -5,10 +5,10 @@
     android:background="@drawable/grid_item_border"
     android:gravity="center">
 
-    <ImageView
+    <com.gnt.sharestickers_android.SquareImageView
         android:id="@+id/item_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:adjustViewBounds="true"
+        android:scaleType="centerCrop"
         android:layout_margin="2dp"/>
 </LinearLayout>

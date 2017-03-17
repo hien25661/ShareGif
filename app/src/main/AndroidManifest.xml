@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".SharestickersPreviewActivity"
+        <activity android:name=".ShareStickersPreviewActivity"
             android:label="@string/label_preview"
             android:parentActivityName=".PictureCollectionActivity">
             <meta-data

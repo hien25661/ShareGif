@@ -2,12 +2,9 @@ package com.gnt.sharestickers_android;
 
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
-import android.net.Uri;
-import android.support.constraint.ConstraintLayout;
+import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -15,39 +12,30 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.VideoView;
 
-import com.gnt.sharestickers_android.databinding.ActivitySharestickersPreviewBinding;
+import com.gnt.sharestickers_android.databinding.ActivityShareStickersPreviewBinding;
 import com.gnt.sharestickers_android.preview.GifPreview;
 import com.gnt.sharestickers_android.preview.MediaPreview;
 import com.gnt.sharestickers_android.preview.Mp4Preview;
 import com.gnt.sharestickers_android.util.MediaType;
 
-public class SharestickersPreviewActivity extends AppCompatActivity {
+public class ShareStickersPreviewActivity extends AppCompatActivity {
 
     //TODO remove this String
     public final String DEBUG_TAG = getClass().getName();
 
-    private ActivitySharestickersPreviewBinding binding;
-
-    private LinearLayout previewLayout;
-    private ImageButton playButton;
+    private ActivityShareStickersPreviewBinding binding;
     private MediaPreview mediaPreview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_sharestickers_preview);
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_share_stickers_preview);
 
         setupActionBar();
 
-        // Get all necessary view
-        previewLayout = binding.previewLayout;
-        playButton = binding.playButton;
-
         // Register action listener for play button
-        playButton.setOnTouchListener(new TouchDemo());
+        binding.playButton.setOnTouchListener(new OnPlayButtonTouchListener());
 
         // Determine what kind of media to preview and share
         prepareMediaPreview();
@@ -78,7 +66,7 @@ public class SharestickersPreviewActivity extends AppCompatActivity {
             } // End if check mimeType
 
             if (mediaPreview != null) {
-                mediaPreview.attachToLayout(this, previewLayout);
+                mediaPreview.attachToLayout(this, binding.previewLayout);
             } else {
                 if (BuildConfig.DEBUG ) {
                     Log.d(DEBUG_TAG, "mediaPreview is null");
@@ -122,7 +110,7 @@ public class SharestickersPreviewActivity extends AppCompatActivity {
         }
     }
 
-    class TouchDemo implements View.OnTouchListener {
+    class OnPlayButtonTouchListener implements View.OnTouchListener {
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
@@ -161,7 +149,6 @@ public class SharestickersPreviewActivity extends AppCompatActivity {
                 }
                 return false;
             }
-
         }
     }
 }

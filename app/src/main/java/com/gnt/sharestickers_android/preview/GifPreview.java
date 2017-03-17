@@ -85,7 +85,7 @@ public class GifPreview extends MediaPreview {
         shareGifIntent.setType(getMIMEType());
 
         Activity previewActivity = (Activity) context;
-        previewActivity.startActivity(shareGifIntent);
+        previewActivity.startActivity(Intent.createChooser(shareGifIntent, "Share Using"));
     }
 
     @Override
